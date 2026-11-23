@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f0deb8">
+  <meta name="description" content="Plec i Gas, curses de miniatures en 3D sobre circuits de cartolina.">
+  <link rel="icon" href="./mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <title>Plec i Gas · Dejoco Arts</title>
+</head>
+<body>
+  <main class="shell">
+    <aside id="setup" aria-label="Configuració de la cursa">
+      <header>
+        <div class="studio"><img src="./mark.svg" alt="" width="25" height="25"> DEJOCO ARTS</div>
+        <h1>Plec <i>i</i> Gas<span>.</span></h1>
+        <p class="subtitle">Curses de miniatures</p>
+      </header>
+      <div class="picker">
+        <label for="car">Cotxe</label>
+        <select id="car"></select>
+        <div class="car-card">
+          <canvas id="model" width="152" height="96" aria-label="Vista del cotxe seleccionat"></canvas>
+          <div id="specs" class="specs"></div>
+        </div>
+        <label for="track">Circuit</label>
+        <select id="track"></select>
+        <label for="mode">Modalitat</label>
+        <select id="mode">
+          <option value="race">Gran premi · 5 rivals</option>
+          <option value="time">Contrarellotge</option>
+        </select>
+        <button id="start" class="primary">A la graella <span aria-hidden="true">↗</span></button>
+      </div>
+      <p class="keyboard">Fletxes o WASD per conduir · Espai per derrapar</p>
+    </aside>
+
+    <section class="play" aria-label="Diorama i pista">
+      <div id="venue" class="venue">
+        <div><div id="chapter"></div><strong id="venueName"></strong></div>
+        <span id="grade"></span>
+      </div>
+      <canvas id="game" aria-label="Pista de curses en vista zenital"></canvas>
+      <div id="record" class="record"></div>
+      <div id="hud" class="hud" hidden>
+        <div><span>VOLTA</span><strong id="lap"></strong></div>
+        <div id="rankBox"><span>POSICIÓ</span><strong id="rank"></strong></div>
+        <div><span>TEMPS</span><strong id="clock"></strong></div>
+        <button id="reset" class="icon" title="Recol·loca el cotxe (R)" aria-label="Recol·loca el cotxe">↺</button>
+        <button id="pause" class="icon" title="Pausa (Esc)" aria-label="Pausa">Ⅱ</button>
+      </div>
+      <div id="count" class="count" hidden></div>
+      <div id="controls" class="controls" hidden>
+        <div id="stick" class="stick" aria-label="Direcció analògica"><div id="knob"></div></div>
+        <div class="pedals">
+          <button data-pedal="drift" title="Derrapar" aria-label="Derrapar">≈</button>
+          <button data-pedal="brake" aria-label="Frenar o fer marxa enrere">Fre</button>
+          <button data-pedal="gas" aria-label="Accelerar">Gas</button>
+        </div>
+      </div>
+      <div id="overlay" class="overlay" hidden>
+        <section class="result" aria-labelledby="resultTitle">
+          <h2 id="resultTitle"></h2>
+          <p id="resultBody"></p>
+          <button id="resume" class="primary">Continua</button>
+          <button id="retry">Repeteix</button>
+          <button id="garage">Torna al garatge</button>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./game.mjs"></script>
+</body>
+</html>
