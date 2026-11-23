@@ -8,13 +8,13 @@ export const angleDiff=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 export class Race {
   constructor(course,track,car,mode) {
     Object.assign(this,{course,track,mode,time:0,penalty:0,done:false,nextGate:1});
-    this.player={...course.at(START-13,-8),model:car,vx:0,vz:0,player:true,progress:-13};
+    this.player={...course.at(START-13,-track.half*.5),model:car,vx:0,vz:0,player:true,progress:-13};
     this.rivals=[];
     if(mode==='race'){
       const potentials=cars.filter(model=>model!==car);
       this.rivals=Array.from({length:5},(_,i)=>{
         const distance=-13-Math.floor((i+1)/2)*42;
-        const lane=(i%2===0?1:-1)*(track.half*.43);
+        const lane=(i%2===0?1:-1)*(track.half*.5);
         return {...course.at(START+distance,lane),model:potentials[(i*3+track.world)%potentials.length],
           progress:distance,lane,speed:0,index:i,finish:null};
       });
@@ -47,7 +47,7 @@ export class Race {
     let forward=p.vx*c+p.vz*s, sideways=-p.vx*s+p.vz*c;
     if(gas)forward+=m.thrust*dt;
     if(brake)forward-=(forward>8?420:132)*dt;
-    forward*=Math.exp(-(gas||brake?.22:1.38)*dt);
+    forward*=Math.exp(-(gas||brake ? .22 : 1.38)*dt);
     sideways*=Math.exp(-(drift?1.75:m.grip)*dt);
     if(drift)forward*=Math.exp(-.4*dt);
     if(off)forward*=Math.exp(-2.6*dt);

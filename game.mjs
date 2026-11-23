@@ -80,7 +80,7 @@ function clearInput(){
 function start(){
   race=new Race(course,track,cars[carIndex()],mode());
   clearInput();
-  phase='countdown';countdown=3;
+  phase='countdown';countdown=3;last=performance.now();
   document.body.classList.add('racing');
   $('hud').hidden=false;$('rankBox').hidden=mode()==='time';$('overlay').hidden=true;
   $('controls').hidden=false;
@@ -96,6 +96,7 @@ function showResult(title,description,resume){
 function pause(){
   if(phase==='paused'){
     phase=countdown>0?'countdown':'running';$('overlay').hidden=true;$('controls').hidden=false;
+    $('count').hidden=phase!=='countdown';last=performance.now();
     $('pause').focus();
   }else if(phase==='running'||phase==='countdown'){
     phase='paused';clearInput();showResult('En pausa',track.name,true);
@@ -168,11 +169,7 @@ for(const button of document.querySelectorAll('[data-pedal]')){
 }
 const pressed=(a,b)=>keys.has(a)||keys.has(b);
 function update(dt){
-  if(phase==='countdown'){
-    countdown-=dt;
-    $('count').textContent=countdown>0?Math.ceil(countdown):'GAS!';
-    if(countdown<=0)phase='running';
-  }else if(phase==='running'){
+  if(phase==='running'){
     const turn=Number(pressed('ArrowRight','KeyD'))-Number(pressed('ArrowLeft','KeyA'));
     race.step(dt,{
       steer:clamp(turn+steering,-1,1), gas:pressed('ArrowUp','KeyW')||pedals.has('gas'),
@@ -188,20 +185,28 @@ function render(dt){
   g.translate(-viewbox.x,-viewbox.y);
   paintBoard(g,board,world,dt,time);
   const racers=[...race.rivals,race.player].sort((a,b)=>a.z-b.z);
-  for(const state of racers)drawCar(g,{...state,time});
+  for(const state of racers)drawCar(g,{...state,time},.78);
   if(phase==='garage'){
     preview.clearRect(0,0,152,96);
     drawCar(preview,{model:cars[carIndex()],angle:-.27+Math.sin(time*.9)*.28,x:74,z:57},2.34);
   }else refreshHUD();
 }
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000);
-  last=now;time+=dt;accum+=dt;
-  while(accum>=1/120){update(1/120);accum-=1/120;}
-  render(dt);requestAnimationFrame(frame);
+  const elapsed=clamp((now-last)/1000,0,1);
+  last=now;time+=elapsed;
+  if(phase==='countdown'){
+    countdown=Math.max(0,countdown-elapsed);
+    const label=countdown>0?String(Math.ceil(countdown)):'GAS!';
+    if($('count').textContent!==label)$('count').textContent=label;
+    if(countdown===0)phase='running';
+  }else if(phase==='running'){
+    accum+=Math.min(.22,elapsed);
+    while(accum>=1/120){update(1/120);accum-=1/120;}
+  }
+  render(Math.min(.05,elapsed));requestAnimationFrame(frame);
 }
 function resize(){
-  const pixelRatio=Math.min(2,devicePixelRatio);
+  const pixelRatio=Math.min(1.5,devicePixelRatio);
   const {width,height}=canvas.getBoundingClientRect();
   canvas.width=Math.max(1,Math.round(width*pixelRatio));canvas.height=Math.max(1,Math.round(height*pixelRatio));
 }
