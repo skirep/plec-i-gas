@@ -55,21 +55,27 @@ select{min-width:0;width:100%;background:var(--light);border:1px solid var(--rul
 #venueName{font:700 clamp(1.22rem,2.7vw,2.5rem)/1.1 Georgia,serif;margin:3px 0 0;display:block}
 #grade{white-space:nowrap;color:#4f392f}
 .record{font-size:.73rem;text-align:right;color:#50392f;min-height:1lh;margin-top:3px}
-body.racing .shell{display:block}
+body.racing{overflow:hidden;overscroll-behavior:none}
+body.racing .shell{display:block;min-height:0}
 body.racing #setup,body.racing .venue,body.racing .record{display:none}
-body.racing .play{min-height:100svh;justify-content:center;padding:65px 12px 18px}
-body.racing #game{width:min(100%,calc((100svh - 100px)*1.7484));max-width:none}
+body.racing .play{height:100dvh;min-height:0;padding:0;overflow:hidden;touch-action:none}
+body.racing #game{width:100%;height:100%;max-width:none;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none}
 .hud{
-  position:absolute;top:max(9px,env(safe-area-inset-top));display:flex;gap:clamp(5px,2vw,18px);
-  left:50%;transform:translateX(-50%);align-items:stretch;white-space:nowrap
+  position:absolute;z-index:1;top:max(9px,env(safe-area-inset-top));display:flex;gap:8px;
+  left:50%;transform:translateX(-50%);align-items:stretch;justify-content:center;
+  width:max-content;max-width:calc(100% - 16px);flex-wrap:wrap;white-space:nowrap;
 }
-.hud>div,.icon{
+.hud>div:not(.zoom),.icon,.zoom-label{
   padding:3px 11px;background:#f8eacd;border:1px solid #9a795b;
   border-radius:3px;box-shadow:0 3px 0 #8c6347;text-align:center
 }
 .hud span{display:block;font-size:.60rem;letter-spacing:.05em}
 .hud strong{font:bold 1rem ui-monospace,monospace}
-.icon{font-weight:bold;font-size:1.14rem}
+.icon{font-weight:bold;font-size:1.14rem;min-width:40px;min-height:40px;touch-action:manipulation}
+.icon:disabled{opacity:.55;box-shadow:none;cursor:default}
+.zoom{display:flex;align-items:stretch;gap:4px}
+.zoom-label{min-width:60px;padding:3px 6px}
+.zoom .icon{font-size:1.35rem}
 .count{
   position:absolute;pointer-events:none;top:45%;left:50%;transform:translate(-50%,-50%);
   color:#fff2bd;text-shadow:3px 3px #743b28,-1px -1px #743b28;
@@ -108,28 +114,45 @@ body.racing #game{width:min(100%,calc((100svh - 100px)*1.7484));max-width:none}
   .venue{font-size:.64rem}
   .record{margin:4px 0 0}
 }
-@media(pointer:coarse){
+@media(max-width:600px){
+  .hud{gap:5px}
+  .hud>div:not(.zoom),.icon{padding-left:6px;padding-right:6px}
+  .hud .zoom{flex:0 0 100%;justify-content:center}
+  .hud strong{font-size:.9rem}
+}
+@media(any-pointer:coarse){
   .controls{
     display:flex;justify-content:space-between;align-items:end;position:absolute;
     left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));
-    bottom:max(12px,env(safe-area-inset-bottom));gap:8px;
+    bottom:max(12px,env(safe-area-inset-bottom));gap:8px;pointer-events:none;
   }
   .stick{
-    width:100px;height:100px;border:2px solid #f0deb8;border-radius:50%;
-    display:grid;place-items:center;background:#49362ecc;box-shadow:0 3px 0 #513228;
+    width:200px;height:200px;flex:0 0 200px;border:3px solid #f0deb8;border-radius:50%;
+    display:grid;place-items:center;position:relative;pointer-events:auto;
+    background:#49362ecc;box-shadow:inset 0 0 0 2px #543d2c,0 4px 0 #513228;
   }
-  #knob{width:44px;height:44px;border-radius:50%;background:#e8c980;box-shadow:0 3px 0 #8d6343;pointer-events:none}
+  .stick::before{
+    content:"";position:absolute;inset:15%;border:1px dashed #f0deb880;border-radius:50%;pointer-events:none
+  }
+  .stick.steering{background:#49362ee8}
+  #knob{width:88px;height:88px;border-radius:50%;background:#e8c980;border:2px solid #f2dca5;
+    box-shadow:0 4px 0 #8d6343;pointer-events:none;z-index:1}
   .pedals{display:flex;gap:7px}
-  .pedals button{height:61px;min-width:44px;border:1px solid #8d6049;border-radius:11px;background:#f5ddb4;box-shadow:0 3px 0 #815939;font-weight:800}
+  .pedals button{height:61px;min-width:44px;border:1px solid #8d6049;border-radius:11px;background:#f5ddb4;box-shadow:0 3px 0 #815939;font-weight:800;pointer-events:auto}
   .pedals [data-pedal="gas"]{background:#a73f2d;color:#fff0cd;min-width:59px}
   .pedals button:active{transform:translateY(3px);box-shadow:none}
 }
-@media(pointer:coarse) and (orientation:portrait){
-  body.racing .play{padding-bottom:130px}
+@media(any-pointer:coarse) and (orientation:portrait){
+  .pedals{display:grid;grid-template-columns:44px 59px;align-items:end}
+  .pedals [data-pedal="drift"]{grid-column:1/-1;justify-self:end;width:59px}
 }
-@media(pointer:coarse) and (orientation:landscape){
-  body.racing #game{width:min(calc(100% - 96px),calc((100svh - 76px)*1.7484))}
-  body.racing .play{padding-top:54px;padding-bottom:9px}
-  .stick{width:78px;height:78px}
-  .pedals button{height:47px}
+@media(any-pointer:coarse) and (orientation:portrait) and (max-width:350px){
+  .controls{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right))}
+  .pedals{grid-template-columns:64px}
+  .pedals button{height:54px;width:64px}
+}
+@media(any-pointer:coarse) and (orientation:landscape){
+  .stick{width:156px;height:156px;flex-basis:156px}
+  #knob{width:88px;height:88px}
+  .pedals button{height:56px}
 }

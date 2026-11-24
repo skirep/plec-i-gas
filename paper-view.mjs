@@ -3,8 +3,9 @@ Paper specification: tabletop racing in six original worlds, from a schoolyard t
 Matte 1.5–3% cut stock, patterned paper and warm directional shadows. School inks:
 #ddc18f ground, #efd7a6 sheet, #425158 tarmac, #cd8050 cut kerb, #eaae37 signal,
 #6c4436 shadow. Warm upper-left key (48° elevation), subtle one-sided lit lips.
-Orthographic overhead camera (65° down), full circuit framed for steering in portrait
-and landscape. The whole driving surface stays sharp. Shadow penumbra 3–8 units.
+Orthographic overhead camera (65° down), with 1× overview and 1.7–3.4× smooth
+tracking shots in portrait and landscape. The whole driving surface stays sharp.
+Shadow penumbra 3–8 units. Printed paper continues outside the circuit.
 Road and runoffs are printed. Scenery uses fold-up panels, slotted crosses and boxes.
 Launch banner opens with a damped hinge, then flags, floating confetti and dust move
 quietly. Review targets: settled desktop, portrait race HUD, other world palettes.
@@ -16,6 +17,7 @@ const cream='#f8e5b9', ink='#332b32', squash=.91, altitude=.42;
 const box=(width,length,x=0,z=0)=>[[x-length/2,z-width/2],[x+length/2,z-width/2],[x+length/2,z+width/2],[x-length/2,z+width/2]];
 const regular=(n,r,x=0,z=0)=>Array.from({length:n},(_,i)=>[x+r*Math.cos(i*Math.PI*2/n),z+r*Math.sin(i*Math.PI*2/n)]);
 const project=([x,y,z])=>[x,z*squash-y*altitude];
+export const projectGround=(x,z)=>project([x,0,z]);
 function path(g, points) {
   g.beginPath();
   points.forEach(([x,y],i)=>i ? g.lineTo(x,y) : g.moveTo(x,y));
@@ -184,12 +186,15 @@ const podium = ['#be654f','#5d8f80','#d4a64e','#7576a0','#936449','#466b84'];
 const viewbox={x:-22,y:-28,w:1084,h:620};
 export function makeBoard(track,course,world,index) {
   const canvas=document.createElement('canvas');
-  canvas.width=1626;canvas.height=930;
+  const resolution=2.5;
+  canvas.width=Math.round(viewbox.w*resolution);
+  canvas.height=Math.round(viewbox.h*resolution);
   const g=canvas.getContext('2d');
-  g.scale(1.5,1.5);
+  g.scale(resolution,resolution);
   g.translate(-viewbox.x,-viewbox.y);
   const random=rng(9483+index*629);
-  g.fillStyle=g.createPattern(paperSheet({size:256,color:world.ground,seed:index+3,fibres:1.8,mottle:.12}),'repeat');
+  const ground=g.createPattern(paperSheet({size:256,color:world.ground,seed:index+3,fibres:1.8,mottle:.12}),'repeat');
+  g.fillStyle=ground;
   g.fillRect(viewbox.x,viewbox.y,viewbox.w,viewbox.h);
   for(let z=-1;z<7;z++)for(let x=-1;x<13;x++){
     const x0=x*94,z0=z*94;
@@ -251,7 +256,7 @@ export function makeBoard(track,course,world,index) {
   const specks=Array.from({length:20},()=>({x:random()*1040,z:random()*630,t:random()*6.28,r:1+random()*2}));
   const hinge=new FlapSpring({size:.47});
   hinge.set(1);
-  return {canvas,viewbox,grid,hinge,specks};
+  return {canvas,viewbox,grid,hinge,specks,ground};
 }
 export function paintBoard(g,board,world,dt,time){
   const {canvas,viewbox,grid,hinge,specks}=board;

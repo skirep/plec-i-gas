@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f0deb8">
   <meta name="description" content="Plec i Gas, curses de miniatures en 3D sobre circuits de cartolina.">
   <link rel="icon" href="./mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=2">
   <title>Plec i Gas · Dejoco Arts</title>
 </head>
 <body>
@@ -33,7 +33,7 @@
         </select>
         <button id="start" class="primary">A la graella <span aria-hidden="true">›</span></button>
       </div>
-      <p class="keyboard">Fletxes o WASD per conduir · Espai per derrapar</p>
+      <p class="keyboard">Fletxes o WASD per conduir · Espai per derrapar · +/− per canviar el zoom</p>
     </aside>
 
     <section class="play" aria-label="Diorama i pista">
@@ -49,6 +49,11 @@
         <div><span>TEMPS</span><strong id="clock"></strong></div>
         <button id="reset" class="icon" title="Recol·loca el cotxe (R)" aria-label="Recol·loca el cotxe">↺</button>
         <button id="pause" class="icon" title="Pausa (Esc)" aria-label="Pausa">II</button>
+        <div class="zoom" role="group" aria-label="Zoom de la càmera">
+          <button id="zoomOut" class="icon" title="Allunya la càmera (−)" aria-label="Allunya la càmera">−</button>
+          <div class="zoom-label"><span>ZOOM</span><strong id="zoomValue" aria-live="polite"></strong></div>
+          <button id="zoomIn" class="icon" title="Apropa la càmera (+)" aria-label="Apropa la càmera">+</button>
+        </div>
       </div>
       <div id="count" class="count" hidden></div>
       <div id="controls" class="controls" hidden>
@@ -70,6 +75,6 @@
       </div>
     </section>
   </main>
-  <script type="module" src="./game.mjs"></script>
+  <script type="module" src="./game.mjs?v=2"></script>
 </body>
 </html>

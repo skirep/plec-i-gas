@@ -6,6 +6,7 @@ Joc de curses de miniatures en 3D amb càmera zenital, fet per a Dejoco Arts. Tr
 
 - Teclat · fletxes o WASD per conduir, espai per derrapar, R per recol·locar-te i Esc per pausar.
 - Pantalla tàctil · joystick analògic, gas, fre i botó de derrapatge. Mantén premut el fre per fer marxa enrere quan el cotxe s'aturi.
+- Càmera · segueix el cotxe durant la cursa. Fes servir els botons + i − (o les tecles corresponents) per canviar entre tres nivells de seguiment i el mapa complet.
 
 Les millors marques es guarden al navegador per circuit i modalitat. Recol·locar-se afegeix dos segons.
 

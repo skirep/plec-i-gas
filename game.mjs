@@ -1,6 +1,7 @@
 import {cars,tracks,worlds,clamp,makeCourse} from './catalog.mjs';
 import {LAPS,Race} from './race.mjs';
-import {drawCar,makeBoard,paintBoard} from './paper-view.mjs';
+import {drawCar,makeBoard,paintBoard,projectGround} from './paper-view.mjs?v=2';
+import {RaceCamera,ZOOM_LEVELS,DEFAULT_ZOOM} from './camera.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'), g=canvas.getContext('2d');
@@ -10,6 +11,9 @@ const directionKeys=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Key
 let steering=0, pointer=null;
 let track,world,course,board,race,phase='garage',countdown=0;
 let time=0,last=performance.now(),accum=0;
+const camera=new RaceCamera();
+let zoomIndex=DEFAULT_ZOOM;
+let viewport={width:1,height:1,top:0,bottom:0};
 const fmt=t=>{
   const total=Math.round(t*1000), seconds=Math.floor(total/1000);
   return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+'.'+String(total%1000).padStart(3,'0');
@@ -31,6 +35,21 @@ function read(key){
 }
 function save(key,value){
   try{localStorage.setItem('plec-i-gas:'+key,value);}catch{/* Private browsing can disable persistence. */}
+}
+const savedZoom=read('zoom');
+if(savedZoom!==null&&Number.isInteger(Number(savedZoom))){
+  zoomIndex=clamp(Number(savedZoom),0,ZOOM_LEVELS.length-1);
+}
+function refreshZoom(){
+  $('zoomValue').textContent=zoomIndex===0?'Mapa':ZOOM_LEVELS[zoomIndex].toLocaleString('ca')+'×';
+  $('zoomOut').disabled=zoomIndex===0;
+  $('zoomIn').disabled=zoomIndex===ZOOM_LEVELS.length-1;
+}
+function changeZoom(amount){
+  zoomIndex=clamp(zoomIndex+amount,0,ZOOM_LEVELS.length-1);
+  save('zoom',zoomIndex);
+  refreshZoom();
+  resize();
 }
 const carIndex=()=>Number($('car').value);
 const trackIndex=()=>Number($('track').value);
@@ -76,16 +95,19 @@ updateTrack();
 
 function clearInput(){
   keys.clear();pedals.clear();steering=0;pointer=null;$('knob').style.transform='';
+  $('stick').classList.remove('steering');
 }
 function start(){
   race=new Race(course,track,cars[carIndex()],mode());
   clearInput();
+  camera.reset();
+  accum=0;
   phase='countdown';countdown=3;last=performance.now();
   document.body.classList.add('racing');
   $('hud').hidden=false;$('rankBox').hidden=mode()==='time';$('overlay').hidden=true;
   $('controls').hidden=false;
   $('count').textContent='3';$('count').hidden=false;
-  refreshHUD();
+  refreshHUD();refreshZoom();resize();
 }
 function showResult(title,description,resume){
   $('count').hidden=true;
@@ -96,7 +118,7 @@ function showResult(title,description,resume){
 function pause(){
   if(phase==='paused'){
     phase=countdown>0?'countdown':'running';$('overlay').hidden=true;$('controls').hidden=false;
-    $('count').hidden=phase!=='countdown';last=performance.now();
+    $('count').hidden=phase!=='countdown';last=performance.now();resize();
     $('pause').focus();
   }else if(phase==='running'||phase==='countdown'){
     phase='paused';clearInput();showResult('En pausa',track.name,true);
@@ -105,7 +127,7 @@ function pause(){
 function garage(){
   clearInput();phase='garage';$('overlay').hidden=true;$('hud').hidden=true;
   $('controls').hidden=true;$('count').hidden=true;
-  document.body.classList.remove('racing');updateCar();updateRecord();$('start').focus();
+  document.body.classList.remove('racing');updateCar();updateRecord();resize();$('start').focus();
 }
 function finish(){
   phase='finished';clearInput();
@@ -126,14 +148,22 @@ function refreshHUD(){
 }
 $('start').onclick=start;$('retry').onclick=start;$('pause').onclick=pause;
 $('resume').onclick=pause;$('garage').onclick=garage;
-$('reset').onclick=()=>{if(phase==='running')race.reset();};
+function resetCar(){
+  if(phase==='running'){race.reset();camera.reset();}
+}
+$('reset').onclick=resetCar;
+$('zoomOut').onclick=()=>changeZoom(-1);
+$('zoomIn').onclick=()=>changeZoom(1);
 addEventListener('keydown',e=>{
   if(phase==='garage')return;
   if(directionKeys.has(e.code)&&!(phase==='paused'||phase==='finished')){
     e.preventDefault();keys.add(e.code);
   }
   if(!e.repeat&&e.code==='Escape')pause();
-  if(!e.repeat&&e.code==='KeyR'&&phase==='running')race.reset();
+  if(!e.repeat&&e.code==='KeyR')resetCar();
+  if(!e.repeat&&['+','=','-','−'].includes(e.key)){
+    e.preventDefault();changeZoom(e.key==='+'||e.key==='='?1:-1);
+  }
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>{
@@ -141,12 +171,16 @@ addEventListener('blur',()=>{
   if(phase==='running'||phase==='countdown')pause();
 });
 const stick=$('stick');
+function refreshStick(value){
+  stick.classList.toggle('steering',Math.abs(value)>.02);
+}
 function stickMove(e){
   if(pointer!==e.pointerId)return;
   const rect=stick.getBoundingClientRect();
   const dx=e.clientX-rect.left-rect.width/2,dy=e.clientY-rect.top-rect.height/2;
   const d=Math.max(1,Math.hypot(dx,dy)/(rect.width*.34));
   steering=clamp(dx/(rect.width*.34),-1,1);
+  refreshStick(steering);
   $('knob').style.transform='translate('+dx/d+'px,'+dy/d+'px)';
 }
 stick.addEventListener('pointerdown',e=>{
@@ -156,7 +190,7 @@ stick.addEventListener('pointerdown',e=>{
 stick.addEventListener('pointermove',stickMove);
 for(const name of ['pointerup','pointercancel','lostpointercapture']){
   stick.addEventListener(name,e=>{
-    if(pointer===e.pointerId){pointer=null;steering=0;$('knob').style.transform='';}
+    if(pointer===e.pointerId){pointer=null;steering=0;$('knob').style.transform='';refreshStick(0);}
   });
 }
 for(const button of document.querySelectorAll('[data-pedal]')){
@@ -181,8 +215,22 @@ function update(dt){
 }
 function render(dt){
   const {viewbox}=board;
-  g.setTransform(canvas.width/viewbox.w,0,0,canvas.height/viewbox.h,0,0);
-  g.translate(-viewbox.x,-viewbox.y);
+  if(phase==='garage'){
+    g.setTransform(canvas.width/viewbox.w,0,0,canvas.height/viewbox.h,0,0);
+    g.translate(-viewbox.x,-viewbox.y);
+  }else{
+    const p=race.player;
+    const [x,y]=projectGround(p.x,p.z);
+    const [vx,vy]=projectGround(p.vx,p.vz);
+    const view=camera.update(viewbox,viewport,{x,y,vx,vy},zoomIndex,dt);
+    g.setTransform(view.scale,0,0,view.scale,-view.x*view.scale,-view.y*view.scale);
+    // Continue the printed paper past the edge of the static course image.
+    if(view.x<viewbox.x||view.y<viewbox.y||
+      view.x+view.w>viewbox.x+viewbox.w||view.y+view.h>viewbox.y+viewbox.h){
+      g.fillStyle=board.ground;
+      g.fillRect(view.x-1,view.y-1,view.w+2,view.h+2);
+    }
+  }
   paintBoard(g,board,world,dt,time);
   const racers=[...race.rivals,race.player].sort((a,b)=>a.z-b.z);
   for(const state of racers)drawCar(g,{...state,time},.78);
@@ -207,8 +255,18 @@ function frame(now){
 }
 function resize(){
   const pixelRatio=Math.min(1.5,devicePixelRatio);
-  const {width,height}=canvas.getBoundingClientRect();
-  canvas.width=Math.max(1,Math.round(width*pixelRatio));canvas.height=Math.max(1,Math.round(height*pixelRatio));
+  const rect=canvas.getBoundingClientRect();
+  const width=Math.max(1,Math.round(rect.width*pixelRatio));
+  const height=Math.max(1,Math.round(rect.height*pixelRatio));
+  if(canvas.width!==width)canvas.width=width;
+  if(canvas.height!==height)canvas.height=height;
+  const racing=phase!=='garage';
+  const top=racing?Math.max(0,$('hud').getBoundingClientRect().bottom-rect.top+10)*pixelRatio:0;
+  const portrait=matchMedia('(any-pointer: coarse) and (orientation: portrait)').matches;
+  const controls=$('controls');
+  const bottom=racing&&portrait&&!controls.hidden
+    ?Math.max(0,rect.bottom-controls.getBoundingClientRect().top+8)*pixelRatio:0;
+  viewport={width,height,top,bottom};
 }
 new ResizeObserver(resize).observe(canvas);
 resize();
